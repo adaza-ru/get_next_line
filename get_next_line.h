@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef LIBFT_H
-# define LIBFT_H
+#ifndef GNL_H
+# define GNL_H
 
 #ifndef BUFFER_SIZE
 # define BUFFER_SIZE 42
@@ -25,5 +25,8 @@ typedef struct s_list
 	char			*stash;
 	struct s_list	*next;
 }	t_list;
+
+char	*ft_strchr(const char *s, int c);
+char	*ft_strjoin(char const *s1, char const *s2);
 
 #endif
