@@ -89,7 +89,7 @@ static int	read_to_stash(int fd, char **stash, char *buffer)
 
 char	*get_next_line(int fd)
 {
-	static char	*stash[1027];
+	static char	*stash[1024];
 	char		*line;
 	char		*buffer;
 
@@ -98,15 +98,15 @@ char	*get_next_line(int fd)
 	buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	if (buffer == NULL)
 		return (0);
-	if (read_to_stash(fd, &stash[fd + 3], buffer) == 0)
+	if (read_to_stash(fd, &stash[fd], buffer) == 0)
 	{
 		free(buffer);
-		free(stash[fd + 3]);
+		free(stash[fd]);
 		stash[fd] = NULL;
 		return (NULL);
 	}
-	line = fetch_line(stash[fd + 3], '\n');
-	stash[fd + 3] = new_stash(stash[fd + 3], '\n');
+	line = fetch_line(stash[fd], '\n');
+	stash[fd] = new_stash(stash[fd], '\n');
 	free(buffer);
 	return (line);
 }
