@@ -93,7 +93,7 @@ char	*get_next_line(int fd)
 	char		*line;
 	char		*buffer;
 
-	if (fd < 0 || BUFFER_SIZE < 0 || !BUFFER_SIZE)
+	if (fd < 0 || BUFFER_SIZE < 0)
 		return (NULL);
 	buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	if (buffer == NULL)
@@ -108,7 +108,7 @@ char	*get_next_line(int fd)
 	free(buffer);
 	line = fetch_line(stash, '\n');
 	if (line == NULL)
-		return(NULL);
+		return (NULL);
 	stash = new_stash(stash, '\n');
 	return (line);
 }
