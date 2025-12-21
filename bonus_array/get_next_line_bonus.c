@@ -79,7 +79,8 @@ static int	read_to_stash(int fd, char **stash, char *buffer)
 		}
 		buffer[read_state] = '\0';
 		tmp_str = ft_strjoin(*stash, buffer);
-		free(*stash);
+		if (*stash)
+			free(*stash);
 		*stash = tmp_str;
 		if (*stash == NULL && read_state == 0)
 			return (0);

@@ -62,6 +62,27 @@ static char	*fetch_line(char	*stash,	char eol)
 	return (line);
 }
 
+static void	free_and_delete_node(char *buffer, t_gnl *ptr, t_gnl **list)
+{
+	t_gnl	*temp;
+	t_gnl	*prev;
+
+	free(buffer);
+	free(ptr->stash);
+	if (*list == ptr)
+	{
+		temp = ptr->next;
+		free(ptr);
+		*list = temp;
+		return ;
+	}
+	prev = *list;
+	while (prev != NULL && prev->next != ptr)
+		prev = prev->next;
+	prev->next = ptr->next;
+	free(ptr);
+}
+
 static int	read_to_stash(int fd, char **stash, char *buffer)
 {
 	int		read_state;
@@ -79,7 +100,8 @@ static int	read_to_stash(int fd, char **stash, char *buffer)
 		}
 		buffer[read_state] = '\0';
 		tmp_str = ft_strjoin(*stash, buffer);
-		free(*stash);
+		if (*stash)
+			free(*stash);
 		*stash = tmp_str;
 		if (*stash == NULL && read_state == 0)
 			return (0);
@@ -98,17 +120,20 @@ char	*get_next_line(int fd)
 		return (NULL);
 	buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	if (buffer == NULL)
-		return (0);
-	ptr = find_or_create(fd, list);
-	if (read_to_stash(fd, &stash[fd], buffer) == 0)
+		return (NULL);
+	ptr = find_or_create(fd, &list);
+	if (ptr == NULL)
 	{
 		free(buffer);
-		free(stash[fd]);
-		stash[fd] = NULL;
 		return (NULL);
 	}
-	line = fetch_line(stash[fd], '\n');
-	stash[fd] = new_stash(stash[fd], '\n');
+	if (read_to_stash(fd, &ptr->stash, buffer) == 0)
+	{
+		free_and_delete_node(buffer, ptr, &list);
+		return (NULL);
+	}
+	line = fetch_line(ptr->stash, '\n');
+	ptr->stash = new_stash(ptr->stash, '\n');
 	free(buffer);
 	return (line);
 }

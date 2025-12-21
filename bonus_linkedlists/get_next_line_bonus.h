@@ -31,5 +31,6 @@ size_t	ft_strlen(const char *str);
 char	*ft_strchr(const char *s, int c);
 char	*ft_strjoin(char const *s1, char const *s2);
 char	*get_next_line(int fd);
+t_gnl	*find_or_create(int fd, t_gnl **list);
 
 #endif

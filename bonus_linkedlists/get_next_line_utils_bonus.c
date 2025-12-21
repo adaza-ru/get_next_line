@@ -71,20 +71,24 @@ char	*ft_strjoin(char const *s1, char const *s2)
 	ns[x] = '\0';
 	return (ns);
 }
-t_gnl	*find_or_create(int fd, t_gnl *list)
+
+t_gnl	*find_or_create(int fd, t_gnl **list)
 {
 	t_gnl	*ptr;
 
-	if (!new)
-		return ;
-	ptr = lst[0];
-	if (ptr == NULL)
+	ptr = *list;
+	while (ptr != NULL)
 	{
-		lst[0] = new;
-		return ;
-	}
-	while (ptr->next != NULL)
+		if (ptr->file_descriptor == fd)
+			return (ptr);
 		ptr = ptr->next;
-	ptr->next = new;
-	return(ptr);
+	}
+	ptr = malloc(sizeof(t_gnl));
+	if (!ptr)
+		return (NULL);
+	ptr->file_descriptor = fd;
+	ptr->stash = NULL;
+	ptr->next = *list;
+	*list = ptr;
+	return (ptr);
 }
