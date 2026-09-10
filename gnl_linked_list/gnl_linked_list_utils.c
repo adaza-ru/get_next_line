@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line_utils.c                              :+:      :+:    :+:   */
+/*   gnl_linked_list_utils.c                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: adaza-ru <adaza-ru@student.42malaga.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/03 14:35:07 by adaza-ru          #+#    #+#             */
-/*   Updated: 2025/12/03 14:35:07 by adaza-ru         ###   ########.fr       */
+/*   Created: 2025/12/03 14:35:36 by adaza-ru          #+#    #+#             */
+/*   Updated: 2026/09/10 21:01:13 by adaza-ru         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line.h"
+#include "gnl_linked_list.h"
 
 size_t	ft_strlen(const char *str)
 {
@@ -70,4 +70,25 @@ char	*ft_strjoin(char const *s1, char const *s2)
 			ns[x++] = s2[y++];
 	ns[x] = '\0';
 	return (ns);
+}
+
+t_gnl	*find_or_create(int fd, t_gnl **list)
+{
+	t_gnl	*ptr;
+
+	ptr = *list;
+	while (ptr != NULL)
+	{
+		if (ptr->file_descriptor == fd)
+			return (ptr);
+		ptr = ptr->next;
+	}
+	ptr = malloc(sizeof(t_gnl));
+	if (!ptr)
+		return (NULL);
+	ptr->file_descriptor = fd;
+	ptr->stash = NULL;
+	ptr->next = *list;
+	*list = ptr;
+	return (ptr);
 }

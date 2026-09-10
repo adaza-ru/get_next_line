@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line.h                                    :+:      :+:    :+:   */
+/*   gnl_array.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: adaza-ru <adaza-ru@student.42malaga.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/03 14:34:29 by adaza-ru          #+#    #+#             */
-/*   Updated: 2025/12/03 14:34:29 by adaza-ru         ###   ########.fr       */
+/*   Created: 2025/12/03 14:34:47 by adaza-ru          #+#    #+#             */
+/*   Updated: 2026/09/10 20:53:16 by adaza-ru         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef GET_NEXT_LINE_H
-# define GET_NEXT_LINE_H
+#ifndef GNL_ARRAY_H
+# define GNL_ARRAY_H
 
 # ifndef BUFFER_SIZE
 #  define BUFFER_SIZE	42

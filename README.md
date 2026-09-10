@@ -1,79 +1,187 @@
 *This project has been created as part of the 42 curriculum by adaza-ru.*
 
-# Description
+<div align="center">
 
-**Get Next Line** is a project that consists of implementing a function capable of reading and returning a single line from a given file descriptor. The main goal of this project is to develop a solid understanding of file input/output in C, efficient dynamic memory management, and the use of static variables to preserve data between successive function calls.
+# Get Next Line — Two Approaches to Reading in Chunks
 
-The `get_next_line` function reads a file line by line, regardless of the buffer size defined at compile time. Through this project, key concepts such as string manipulation, memory allocation and deallocation, and the use of the `read()` system call are reinforced.
+**A line-by-line file reader in C, implemented twice: an O(1) array-indexed version and an O(n) linked-list version — built to compare raw speed against memory footprint when tracking read state across multiple file descriptors.**
 
-# Instructions
+![C](https://img.shields.io/badge/language-C-00599C?logo=c&logoColor=white)
+![Memory Management](https://img.shields.io/badge/focus-memory_management-blueviolet)
 
-## Compilation
+</div>
 
-To compile the project, use the following commands:
+---
 
-### Mandatory version
+## Table of Contents
 
-`cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 get_next_line.c get_next_line_utils.c -o gnl`
+- [Overview](#overview)
+- [Why Two Implementations?](#why-two-implementations)
+- [Repository Structure](#repository-structure)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+- [Algorithm](#algorithm)
+- [Comparing the Two Approaches](#comparing-the-two-approaches)
+- [Design Reflection](#design-reflection)
+- [Resources](#resources)
+- [Notes](#notes)
 
-### Bonus version
+---
 
-`cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 get_next_line_bonus.c get_next_line_utils_bonus.c -o gnl_bonus`
+## Overview
 
-## Execution
+`get_next_line` reads a file descriptor and returns exactly one line per call, newline included, regardless of the `BUFFER_SIZE` used to read from disk. Each call has to pick up exactly where the previous one left off — which means the function needs to persist state (whatever was read past the last newline) between calls, without any of that state living in the caller's scope.
 
-Create a text file in the project directory and test the function using a simple main, for example:
+The core exercise is in three parts: managing that persistent state safely, handling dynamic memory correctly (no leaks, no use-after-free), and working directly with the `read()` system call instead of buffered stdio.
 
-	#include "get_next_line.h"
-	#include <fcntl.h>
-	#include <stdio.h>
-	#include <stdlib.h>
+## Why Two Implementations?
 
-	int main(void)
+The 42 bonus requires the function to handle **multiple file descriptors in the same program** — call it with `fd_1`, then `fd_2`, then `fd_1` again, and each stream has to resume correctly. That means the persisted state can no longer be a single static variable; it has to be indexed per fd. There are two common ways to do that:
+
+- **Array indexed by fd** — `static char *stash[1024]`, using the fd itself as the index. This is what most implementations use, since 1024 is the typical Unix soft limit on open file descriptors.
+- **Linked list of `{fd, stash}` nodes** — allocates state only for file descriptors actually in use, creating and freeing nodes as fds are opened and exhausted.
+
+Rather than pick one, this repo includes both, on purpose — see [Design Reflection](#design-reflection) for the reasoning and what the comparison actually showed.
+
+The mandatory (single-fd) version isn't included here; this repo focuses on the bonus, where the interesting design decisions live.
+
+## Repository Structure
+
+```
+.
+├── gnl_array/
+│   ├── gnl_arrays.c
+│   ├── gnl_array_utils.c
+│   └── gnl_array.h
+└── gnl_linked_list/
+    ├── gnl_linked_list.c
+    ├── gnl_linked_list_utils.c
+    └── gnl_linked_list.h
+```
+
+Both expose the exact same function signature — `char *get_next_line(int fd)` — so either folder is a drop-in replacement for the other.
+
+## Getting Started
+
+### Requirements
+
+- A C compiler
+
+### Build
+
+```bash
+# Array-based version
+cd gnl_array
+cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 gnl_array.c gnl_array_utils.c main.c -o gnl_test
+./gnl_test file1.txt file2.txt file3.txt
+```
+
+```bash
+# Linked-list version
+cd gnl_linked_list
+cc -Wall -Wextra -Werror -D BUFFER_SIZE=42 gnl_linked_list.c gnl_linked_list_utils.c main.c -o gnl_test
+./gnl_test file1.txt file2.txt file3.txt
+```
+
+`BUFFER_SIZE` can be set to any value at compile time — the function behaves identically regardless of how small or large the read chunks are.
+
+## Usage
+
+### Example of ``main.c``
+
+```c
+#include "gnl_array.h" // <gnl_array.h / gnl_linked_list.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+/*
+** Opens every file passed as an argument and reads them in round-robin,
+** one line at a time, to demonstrate that get_next_line keeps each file
+** descriptor's state independent from the others.
+**
+** Usage: ./gnl_test file1.txt file2.txt file3.txt ...
+*/
+
+int	main(int argc, char **argv)
+{
+	int		*fds;
+	char	*line;
+	int		open_count;
+	int		i;
+
+	if (argc < 2)
+		return (printf("Usage: %s <file1> [file2] ...\n", argv[0]), 1);
+	fds = malloc(sizeof(int) * (argc - 1));
+	if (!fds)
+		return (perror("malloc"), 1);
+	i = 0;
+	while (i < argc - 1)
 	{
-	    int fd = open("file.txt", O_RDONLY);
-	    char *line;
-
-	    while ((line = get_next_line(fd)) != NULL)
-	    {
-	        printf("%s", line);
-	        free(line);
-	    }
-	    close(fd);
-	    return (0);
+		fds[i] = open(argv[i + 1], O_RDONLY);
+		if (fds[i] < 0)
+			perror(argv[i + 1]);
+		i++;
 	}
+	open_count = argc - 1;
+	while (open_count > 0)
+	{
+		i = 0;
+		while (i < argc - 1)
+		{
+			if (fds[i] >= 0)
+			{
+				line = get_next_line(fds[i]);
+				if (line)
+				{
+					printf("[fd %d | %s] %s", fds[i], argv[i + 1], line);
+					free(line);
+				}
+				else
+				{
+					close(fds[i]);
+					fds[i] = -1;
+					open_count--;
+				}
+			}
+			i++;
+		}
+	}
+	free(fds);
+	return (0);
+}
+```
 
-For the bonus part, multiple files can be opened simultaneously, and `get_next_line` can be called with different file descriptors within the same program.
+The bonus version additionally supports interleaving reads across several open file descriptors within the same program — each keeps its own independent state.
 
-# Algorithm
+## Algorithm
 
-Each call to `get_next_line` returns exactly one line, including the newline character if it exists.
+Each call reads from the file descriptor into a fixed-size buffer, appending the result to that fd's persisted stash, and repeats until a `'\n'` is found or `read()` returns 0 (EOF). The line up to and including the newline is then extracted and returned, and consumed from the stash.
 
-The core algorithm is based on repeatedly reading from a file descriptor into a buffer. The read data is appended to a static storage area (stash) each time the `read()` function is called. This process continues until a newline character (`'\n'`) or the end of the file is encountered. Then the complete line can be extracted and returned, and that information is eliminated from the stash.
+All returned lines and intermediate buffers are dynamically allocated and explicitly freed to avoid leaks — including on EOF and error paths, where the stash itself must be released rather than left dangling.
 
-Memory is dynamically allocated for all returned lines and intermediate buffers, and carefully freed to avoid memory leaks.
+## Comparing the Two Approaches
 
-## Bonus – Multiple File Descriptors
+| Aspect | Array (`stash[1024]`) | Linked list |
+|---|---|---|
+| Access per fd | O(1) — direct indexing | O(n) — list traversal |
+| Memory allocated | 1024 pointer slots reserved up front (a few KB, unused slots stay `NULL`) | One node allocated per fd actually in use |
+| Fd ceiling | Bounded by the array size (1024, matching the Unix soft limit) | No ceiling tied to a fixed array size |
+| Lifecycle | Slots persist for the program's lifetime | Nodes are created on first read and freed on EOF/close |
+| Implementation complexity | Simpler — direct indexing | Slightly more — manual node lifecycle management |
 
-For the bonus part, where the function must handle multiple file descriptors at the same time, there are two main possible approaches:
+## Design Reflection
 
-**Arrays**: Provide faster access times but require preallocating memory, which can lead to higher memory usage if many file descriptors are unused.
+The array is what nearly everyone uses for this bonus, and for good reason — O(1) access is hard to beat. My first instinct was that reserving 1024 pointers up front felt wasteful for a program that might only ever open two or three files, so I built the linked-list version to allocate state only for the fds actually in use, accepting O(n) lookups in exchange.
 
-**Linked lists**: Allow dynamic memory allocation only when needed, resulting in better memory efficiency at the cost of slightly slower access.
+In practice, the memory difference turned out to be negligible — 1024 pointers is a few kilobytes, irrelevant on any machine built in the last couple of decades. What the linked-list version gives up is trivial O(1) access; what it gains is a cleaner lifecycle: state exists only as long as an fd is open, created and destroyed alongside it, with no dependency on Unix's fd limit. I kept both versions because that trade-off — a bit of extra complexity in exchange for a structure that doesn't reserve space for something it isn't using — felt like a more interesting exercise than optimizing for a memory cost that, at this scale, doesn't really matter.
 
-In this implementation, linked lists were chosen to manage multiple file descriptors. Each node stores a file descriptor and its associated stash. This design allows the program to scale dynamically with the number of open file descriptors while minimizing unnecessary memory usage, prioritizing flexibility and memory efficiency over raw speed.
+## Resources
 
-# Resources
+- Peer-to-peer discussion
+- Stack Overflow
+- Linux manual pages (`man 2 read`, `man 2 open`, `man 2 close`, `man malloc`)
 
-- P2P.
-- Stack Overflow.  
-- Linux manual pages (man 2 read, man 2 open, man 2 close, man malloc).
+## Notes
 
-## Use of AI in the Project
-
-AI tools were used exclusively as learning and support aids for the following tasks:
-
-- Clarifying theoretical concepts such as how `read()` works at a low level, file descriptors, static variables, and dangling pointers.
-- Assisting with debugging by interpreting Valgrind reports to identify memory leaks and segmentation faults.  
-- Diagnosing specific errors encountered during early implementations.
-- Improving the clarity and structure of the README file.
+Originally built as part of the 42 curriculum. AI tools were used as a learning aid — clarifying low-level concepts (`read()`, file descriptors, static variables, dangling pointers), interpreting Valgrind output during debugging, and improving the structure of this README. All suggestions were reviewed and adapted by hand.

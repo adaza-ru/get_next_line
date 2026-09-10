@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line_utils.c                              :+:      :+:    :+:   */
+/*   gnl_array_utils.c                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: adaza-ru <adaza-ru@student.42malaga.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/03 14:35:07 by adaza-ru          #+#    #+#             */
-/*   Updated: 2025/12/03 14:35:07 by adaza-ru         ###   ########.fr       */
+/*   Created: 2025/12/03 14:35:36 by adaza-ru          #+#    #+#             */
+/*   Updated: 2026/09/10 20:53:35 by adaza-ru         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line.h"
+#include "gnl_array.h"
 
 size_t	ft_strlen(const char *str)
 {
