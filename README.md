@@ -1,5 +1,3 @@
-*This project has been created as part of the 42 curriculum by adaza-ru.*
-
 <div align="center">
 
 # Get Next Line — Two Approaches to Reading in Chunks
@@ -8,6 +6,8 @@
 
 ![C](https://img.shields.io/badge/language-C-00599C?logo=c&logoColor=white)
 ![Memory Management](https://img.shields.io/badge/focus-memory_management-blueviolet)
+
+*This project has been created as part of the 42 curriculum by adaza-ru.*
 
 </div>
 
